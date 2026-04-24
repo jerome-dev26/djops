@@ -11,7 +11,7 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # We'll fix this later (bad practice intentionally for learning)
+    cidr_blocks = ["10.15.152.145/32"] # We'll fix this later (bad practice intentionally for learning)
   }
 
   egress {
@@ -43,4 +43,24 @@ resource "aws_instance" "this" {
   tags = {
     Name = var.instance_name
   }
+}
+
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_instance_profile" "profile" {
+  name = "ec2-profile"
+  role = aws_iam_role.ec2_role.name
 }
