@@ -1,2 +1,2 @@
 Learning DevsecOps
-we gonna make it!!!
+we gonna make it!
