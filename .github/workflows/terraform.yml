@@ -16,16 +16,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4   # ✅ upgraded
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4   # ✅ upgraded
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5   # ✅ upgraded
         with:
           role-to-assume: arn:aws:iam::875141475090:role/git-trust26-policy
           aws-region: us-east-1
 
-      - run: terraform init
-      - run: terraform validate
-      - run: terraform plan
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
