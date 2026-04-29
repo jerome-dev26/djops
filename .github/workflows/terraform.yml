@@ -35,4 +35,4 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var="public_key=${{ secrets.PUBLIC_KEY }}"
+        run: terraform plan
