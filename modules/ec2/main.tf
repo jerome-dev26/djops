@@ -1,19 +1,20 @@
-resource "aws_key_pair" "deployer" {
+/*resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = var.public_key
 }
+*/
 
 resource "aws_security_group" "ec2_sg" {
   name = "ec2_sg"
 
-  ingress {
+  /*ingress {
     description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["10.15.152.145/32"] # We'll fix this later (bad practice intentionally for learning)
   }
-
+*/
   egress {
     from_port   = 0
     to_port     = 0
@@ -33,6 +34,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+/*
 resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
@@ -43,6 +45,28 @@ resource "aws_instance" "this" {
   tags = {
     Name = var.instance_name
   }
+}
+*/
+
+resource "aws_instance" "this" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t2.micro"
+
+  subnet_id = var.private_subnet_id
+
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  iam_instance_profile = aws_iam_instance_profile.profile.name
+
+  associate_public_ip_address = false
+
+  user_data = <<-EOF
+#!/bin/bash
+apt update -y
+apt install -y docker.io
+systemctl start docker
+systemctl enable docker
+EOF
 }
 
 resource "aws_iam_role" "ec2_role" {
@@ -63,4 +87,9 @@ resource "aws_iam_role" "ec2_role" {
 resource "aws_iam_instance_profile" "profile" {
   name = "ec2-profile"
   role = aws_iam_role.ec2_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
