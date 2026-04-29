@@ -8,4 +8,4 @@ Day 3
 ✅ Identity-based access
 ✅ Fully private compute
 
-#remove all public-keys
+#remove all public-keys and tf-apply
