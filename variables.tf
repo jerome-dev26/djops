@@ -12,9 +12,9 @@ variable "instance_name" {
 #  description = "Path to SSH public key"
 #}
 
-variable "public_key" {}
+#variable "public_key" {}
 
-resource "aws_key_pair" "deployer" {
+/*resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = var.public_key
-}
+}*/
