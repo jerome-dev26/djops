@@ -7,3 +7,5 @@ Day 3
 ❌ No public IP
 ✅ Identity-based access
 ✅ Fully private compute
+
+#remove all keys
