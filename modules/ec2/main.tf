@@ -6,7 +6,8 @@
 
 resource "aws_security_group" "ec2_sg" {
   name = "ec2_sg"
-
+  vpc_id = var.vpc_id
+  
   /*ingress {
     description = "SSH"
     from_port   = 22
