@@ -1,7 +1,18 @@
-resource "aws_vpc" "this" {
+/*resource "aws_vpc" "this" {
   cidr_block = "10.0.0.0/16"
 
   tags = { Name = "secure-vpc" }
+}
+*/
+resource "aws_vpc" "this" {
+  cidr_block = "10.0.0.0/16"
+
+  enable_dns_support   = true   # ✅ REQUIRED
+  enable_dns_hostnames = true   # ✅ REQUIRED
+
+  tags = {
+    Name = "secure-vpc"
+  }
 }
 
 resource "aws_subnet" "public" {
