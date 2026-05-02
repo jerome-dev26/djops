@@ -61,6 +61,10 @@ resource "aws_instance" "this" {
 
   associate_public_ip_address = false
 
+  tags = {
+    Name = var.instance_name
+  }
+/*
   user_data = <<-EOF
 #!/bin/bash
 apt update -y
@@ -68,6 +72,7 @@ apt install -y docker.io
 systemctl start docker
 systemctl enable docker
 EOF
+*/
 }
 
 resource "aws_iam_role" "ec2_role" {
