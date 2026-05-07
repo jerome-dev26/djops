@@ -53,13 +53,16 @@ resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
 
-  subnet_id = var.private_subnet_id
+  #subnet_id = var.private_subnet_id
+  subnet_id = var.public_subnet_id
+  associate_public_ip_address = true
+
 
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
 
   iam_instance_profile = aws_iam_instance_profile.profile.name
 
-  associate_public_ip_address = false
+  #associate_public_ip_address = false
 
   user_data = <<-EOF
 #!/bin/bash
