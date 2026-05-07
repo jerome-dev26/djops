@@ -61,18 +61,47 @@ resource "aws_instance" "this" {
 
   associate_public_ip_address = false
 
+  user_data = <<-EOF
+#!/bin/bash
+
+# Install Docker (offline-safe fallback via snap)
+snap install docker
+
+systemctl start snap.docker.dockerd
+systemctl enable snap.docker.dockerd
+
+# Login to ECR
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
+
+# Pull image
+docker pull ${aws_ecr_repository.app.repository_url}:latest
+
+# Run container
+docker run -d -p 80:80 ${aws_ecr_repository.app.repository_url}:latest
+EOF
+
   tags = {
     Name = var.instance_name
   }
-/*
-  user_data = <<-EOF
-#!/bin/bash
-apt update -y
-apt install -y docker.io
-systemctl start docker
-systemctl enable docker
-EOF
-*/
+}
+
+
+/*resource "aws_instance" "this" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t2.micro"
+
+  subnet_id = var.private_subnet_id
+
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  iam_instance_profile = aws_iam_instance_profile.profile.name
+
+  associate_public_ip_address = false
+
+  tags = {
+    Name = var.instance_name
+  }
 
 user_data = <<-EOF
 #!/bin/bash
@@ -81,9 +110,7 @@ systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
 systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
 EOF
 
-
-
-}
+}*/
 
 resource "aws_iam_role" "ec2_role" {
   name = "ec2-role"
@@ -108,4 +135,13 @@ resource "aws_iam_instance_profile" "profile" {
 resource "aws_iam_role_policy_attachment" "ssm" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_ecr_repository" "app" {
+  name = "my-secure-app"
+}
+
+resource "aws_iam_role_policy_attachment" "ecr" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
