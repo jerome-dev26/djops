@@ -53,6 +53,8 @@ resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
 
+  user_data_replace_on_change = true
+
   #subnet_id = var.private_subnet_id
   subnet_id = var.public_subnet_id
   associate_public_ip_address = true
@@ -67,15 +69,27 @@ resource "aws_instance" "this" {
   user_data = <<-EOF
 #!/bin/bash
 
-# Install Docker (offline-safe fallback via snap)
+# Update packages
+apt update -y
+
+# Install AWS CLI
+apt install awscli -y
+
+# Install Docker
 snap install docker
 
+# Wait for Docker daemon
+sleep 20
+
+# Start Docker manually
 systemctl start snap.docker.dockerd
-systemctl enable snap.docker.dockerd
+
+# Extra wait
+sleep 10
 
 # Login to ECR
 aws ecr get-login-password --region us-east-1 \
-  | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
+| docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
 
 # Pull image
 docker pull ${aws_ecr_repository.app.repository_url}:latest
