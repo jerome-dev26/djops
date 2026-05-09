@@ -11,3 +11,5 @@ variable "public_subnet_id" {
 variable "vpc_id" {
   description = "VPC where resources will be created"
 }
+
+variable "public_subnet2_id" {}
