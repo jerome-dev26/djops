@@ -19,6 +19,8 @@ module "ec2" {
   public_subnet_id = module.vpc.public_subnet_id
   public_subnet2_id = module.vpc.public_subnet2_id
   vpc_id             = module.vpc.vpc_id
+  certificate_arn = aws_acm_certificate.cert.arn
+  
 }
 
 module "vpc" {
