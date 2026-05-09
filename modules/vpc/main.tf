@@ -172,3 +172,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   subnet_ids         = [aws_subnet.private.id]
   security_group_ids = [aws_security_group.endpoint_sg.id]
 }
+
+resource "aws_route53_zone" "main" {
+  name = var.domain_name
+}

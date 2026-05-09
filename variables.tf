@@ -8,6 +8,7 @@ variable "instance_name" {
   default     = "dev-ec2"
 }
 
+variable "domain_name" {}
 #variable "public_key_path" {
 #  description = "Path to SSH public key"
 #}
