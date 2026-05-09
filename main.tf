@@ -1,3 +1,16 @@
+resource "aws_route53_zone" "main" {
+  name = "autodefendops.com"
+}
+
+resource "aws_acm_certificate" "cert" {
+  domain_name       = "autodefendops.com"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 module "ec2" {
   source = "./modules/ec2"
 
