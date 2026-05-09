@@ -92,7 +92,7 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-resource "aws_lb_listener" "http" {
+/*resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
   protocol          = "HTTP"
@@ -101,7 +101,7 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app.arn
   }
-}
+}*/
 
 resource "aws_lb_listener" "http_redirect" {
   load_balancer_arn = aws_lb.app.arn
