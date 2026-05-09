@@ -1,5 +1,5 @@
 resource "aws_route53_zone" "main" {
-  name = "*.autodefendops.com"
+  name = "autodefendops.com"
 }
 
 resource "aws_acm_certificate" "cert" {
