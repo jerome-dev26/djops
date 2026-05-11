@@ -61,6 +61,13 @@ resource "aws_security_group" "ec2_sg" {
   security_groups = [aws_security_group.alb_sg.id]
 }
 
+ingress {
+  from_port       = 3000
+  to_port         = 3000
+  protocol        = "tcp"
+  security_groups = [aws_security_group.alb_sg.id]
+}
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -145,6 +152,39 @@ resource "aws_lb_listener_rule" "n8n" {
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.n8n.arn
+  }
+}
+
+resource "aws_lb_target_group" "grafana" {
+  name     = "grafana-tg"
+  port     = 3000
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    path = "/login"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "grafana" {
+  target_group_arn = aws_lb_target_group.grafana.arn
+  target_id        = aws_instance.this.id
+  port             = 3000
+}
+
+resource "aws_lb_listener_rule" "grafana" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 110
+
+  condition {
+    host_header {
+      values = ["grafana.autod.com"]
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.grafana.arn
   }
 }
 
