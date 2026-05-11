@@ -178,7 +178,7 @@ resource "aws_lb_listener_rule" "grafana" {
 
   condition {
     host_header {
-      values = ["grafana.autod.com"]
+      values = ["grafana.autodefendops.com"]
     }
   }
 
