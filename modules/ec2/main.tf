@@ -51,6 +51,16 @@ resource "aws_security_group" "ec2_sg" {
     self = true
   }
 
+  ingress {
+  description = "n8n from ALB"
+
+  from_port   = 5678
+  to_port     = 5678
+  protocol    = "tcp"
+
+  security_groups = [aws_security_group.alb_sg.id]
+}
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -100,7 +110,18 @@ resource "aws_lb_target_group" "n8n" {
   vpc_id = var.vpc_id
 
   health_check {
+    enabled = true
+
     path = "/"
+    port = "5678"
+
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+
+    timeout  = 5
+    interval = 30
+
+    matcher = "200-399"
   }
 }
 
