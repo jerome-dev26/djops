@@ -92,6 +92,41 @@ resource "aws_lb_target_group_attachment" "app" {
   port             = 80
 }
 
+resource "aws_lb_target_group" "n8n" {
+  name     = "n8n-tg"
+  port     = 5678
+  protocol = "HTTP"
+
+  vpc_id = var.vpc_id
+
+  health_check {
+    path = "/"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "n8n" {
+  target_group_arn = aws_lb_target_group.n8n.arn
+
+  target_id = aws_instance.this.id
+  port      = 5678
+}
+
+resource "aws_lb_listener_rule" "n8n" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 100
+
+  condition {
+    host_header {
+      values = ["n8n.${var.domain_name}"]
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.n8n.arn
+  }
+}
+
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.app.arn
 
@@ -277,6 +312,10 @@ resource "aws_iam_role_policy_attachment" "ecr" {
 resource "aws_acm_certificate" "cert" {
   domain_name       = var.domain_name
   validation_method = "DNS"
+
+  subject_alternative_names = [
+    "n8n.${var.domain_name}"
+    ]
 
   lifecycle {
     create_before_destroy = true
