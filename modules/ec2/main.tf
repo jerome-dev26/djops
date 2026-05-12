@@ -42,15 +42,6 @@ resource "aws_security_group" "ec2_sg" {
     protocol    = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
-
-  ingress {
-    description = "SSM"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    self = true
-  }
-
   ingress {
   description = "n8n from ALB"
 
@@ -178,7 +169,7 @@ resource "aws_lb_listener_rule" "grafana" {
 
   condition {
     host_header {
-      values = ["grafana.autodefendops.com"]
+      values = ["grafana.${var.domain_name}"]
     }
   }
 
@@ -258,7 +249,7 @@ resource "aws_instance" "this" {
 
 resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+  instance_type = "t2.small"
 
   user_data_replace_on_change = true
 
@@ -276,33 +267,76 @@ resource "aws_instance" "this" {
   user_data = <<-EOF
 #!/bin/bash
 
-# Update packages
+set -e
 apt update -y
 
-# Install AWS CLI
-apt install awscli -y
+# Install dependencies
+apt install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    awscli
 
-# Install Docker
-snap install docker
+# Install Docker officially
+install -m 0755 -d /etc/apt/keyrings
 
-# Wait for Docker daemon
-sleep 20
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+| gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# Start Docker manually
-systemctl start snap.docker.dockerd
+chmod a+r /etc/apt/keyrings/docker.gpg
 
-# Extra wait
-sleep 10
+echo \
+  "deb [arch=$(dpkg --print-architecture) \
+  signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" \
+  | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+apt update -y
+
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Start Docker
+systemctl enable docker
+systemctl start docker
+
+# Wait for Docker
+sleep 15
 
 # Login to ECR
 aws ecr get-login-password --region us-east-1 \
-| docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
+| docker login \
+--username AWS \
+--password-stdin ${aws_ecr_repository.app.repository_url}
 
-# Pull image
-docker pull ${aws_ecr_repository.app.repository_url}:latest
+# Run app container
+docker run -d \
+--restart always \
+--name app \
+-p 80:80 \
+${aws_ecr_repository.app.repository_url}:latest
 
-# Run container
-docker run -d -p 80:80 ${aws_ecr_repository.app.repository_url}:latest
+# Run n8n
+docker run -d \
+--restart always \
+--name n8n \
+-p 5678:5678 \
+n8nio/n8n
+
+# Run Grafana
+docker run -d \
+--restart always \
+--name grafana \
+-p 3000:3000 \
+grafana/grafana
+
+# Run Prometheus
+docker run -d \
+--restart always \
+--name prometheus \
+-p 9090:9090 \
+prom/prometheus
 EOF
 
   tags = {
@@ -423,4 +457,27 @@ resource "aws_route53_record" "app" {
     evaluate_target_health = true
   }
 }
+resource "aws_route53_record" "n8n" {
+  zone_id = var.zone_id
 
+  name = "n8n.${var.domain_name}"
+  type = "A"
+
+  alias {
+    name                   = aws_lb.app.dns_name
+    zone_id                = aws_lb.app.zone_id
+    evaluate_target_health = true
+  }
+}
+resource "aws_route53_record" "grafana" {
+  zone_id = var.zone_id
+
+  name = "grafana.${var.domain_name}"
+  type = "A"
+
+  alias {
+    name                   = aws_lb.app.dns_name
+    zone_id                = aws_lb.app.zone_id
+    evaluate_target_health = true
+  }
+}
